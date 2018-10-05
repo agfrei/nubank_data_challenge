@@ -8,7 +8,7 @@ PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 BUCKET = nubank-data-challenge
 PROFILE = default
 PROJECT_NAME = nubank-data-challenge
-PYTHON_INTERPRETER = python
+PYTHON_INTERPRETER = python3
 
 ifeq (,$(shell which conda))
 HAS_CONDA=False
@@ -79,8 +79,23 @@ test_environment:
 #################################################################################
 # PROJECT RULES                                                                 #
 #################################################################################
+train_default:
+	$(PYTHON_INTERPRETER) src/models/train_default.py
 
+train_fraud:
+	$(PYTHON_INTERPRETER) src/models/train_fraud.py
 
+train_spend:
+	$(PYTHON_INTERPRETER) src/models/train_spend.py
+
+predict_default:
+	$(PYTHON_INTERPRETER) src/models/predict_default.py
+
+predict_fraud:
+	$(PYTHON_INTERPRETER) src/models/predict_fraud.py
+
+predict_spend:
+	$(PYTHON_INTERPRETER) src/models/predict_spend.py
 
 #################################################################################
 # Self Documenting Commands                                                     #

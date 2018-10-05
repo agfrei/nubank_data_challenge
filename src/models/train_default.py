@@ -1,4 +1,4 @@
-from default_xgboost import DefaultXGBoost
+from model_default_xgboost import DefaultXGBoost
 
 if __name__ == '__main__':
     print('Trainnig: XGBoost for Default')

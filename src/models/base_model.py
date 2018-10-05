@@ -24,11 +24,13 @@ class BaseModel(object):
         
         self.model = None
         self.model_name = None
+        self.model_scoring = None
         self.model_path = '../../models/'
 
         pd.options.mode.chained_assignment = None
         warnings.simplefilter('ignore', DeprecationWarning)
 
+    # Salvar label encoder em pickle
     def encode(self, df: pd.DataFrame, columns: list) -> pd.DataFrame:
         """Summary
 
@@ -61,7 +63,7 @@ class BaseModel(object):
 
             print ("Fit {} fold {}".format(str(self.model).split('(')[0], j+1))
             self.model.fit(X_train, y_train)
-            cross_score = cross_val_score(self.model, X_holdout, y_holdout, cv=3, scoring='roc_auc')
+            cross_score = cross_val_score(self.model, X_holdout, y_holdout, cv=n_splits, scoring=self.model_scoring)
             end_fold = perf_counter()
             print("    cross_score: {:.5f} - time elapsed: {}".format(cross_score.mean(), end_fold - start_fold))
 

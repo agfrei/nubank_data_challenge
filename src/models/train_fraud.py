@@ -1,4 +1,4 @@
-from fraud_xgboost import FraudXGBoost
+from model_fraud_xgboost import FraudXGBoost
 
 if __name__ == '__main__':
     print('Trainnig: XGBoost for Fraud')
