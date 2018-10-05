@@ -9,7 +9,7 @@ import numpy as np
 from time import perf_counter
 
 
-class DefaultXGBoost(BaseModel):
+class FraudXGBoost(BaseModel):
     def __init__(self, saved_model: str = None):
         super().__init__()
 
@@ -26,7 +26,7 @@ class DefaultXGBoost(BaseModel):
             self.model_name = saved_model
         else:
             datetime_now = datetime.datetime.now().replace(microsecond=0).isoformat().replace(':','-')
-            self.model_name = datetime_now + '_default_xgboost.bin'
+            self.model_name = datetime_now + '_fraud_xgboost.bin'
 
         self.model = XGBClassifier(**params)
 
@@ -46,15 +46,10 @@ class DefaultXGBoost(BaseModel):
         #     print('Prep time elapsed: {}'.format(end - start))
         #     return pd.read_csv(prep_file)
 
-        # removing fraud from our analysis
-        # TODO: Verificar isso
+        # Transform target fraud into 0 or 1
         if 'target_fraud' in df.columns:
-            df = df[df['target_fraud'].isnull()]
-
-        # drop missing values on target_default
-        if 'target_default' in df.columns:
-            df.dropna(subset=['target_default'], inplace=True)
-            # df = df['target_default'].astype('int', copy=False)
+            df['target_fraud'].fillna('-1', inplace=True)
+            df['target_fraud'] = df['target_fraud'].apply(lambda x: 0 if x=='-1' else 1)
 
         # Drop columns wich will not be used for our model
         # TODO: explicar todas
@@ -64,7 +59,7 @@ class DefaultXGBoost(BaseModel):
             'channel',
             'external_data_provider_first_name',
             'profile_phone_number',
-            'target_fraud',
+            'target_default',
             'facebook_profile',
             'profile_tags',
             'user_agent'
@@ -115,7 +110,7 @@ class DefaultXGBoost(BaseModel):
 
     # TODO: Usar o pipeline para resolver isso  
     def train(self, file_name: str, file_path: str = None):
-        super().train(self.prep, file_name=file_name, file_path=file_path, target_col='target_default')
+        super().train(self.prep, file_name=file_name, file_path=file_path, target_col='target_fraud')
     
     def save_model(self):
         model_name = self.model_path + self.model_name

@@ -13,14 +13,15 @@ from sklearn.preprocessing import LabelEncoder
 import warnings
 
 
+# TODO: Gerar os arquivos
+# TODO: Matriz de confusão
 # TODO: Olhar os paths de interin, raw e processed com cuidado
 class BaseModel(object):
     def __init__(self):
+        # TODO: pegar do interin
         self.path = '../../data/processed/'
         # TODO: Revisar os dois
-        self.train_file = 'acquisition_train.csv'
-        self.prep_train_file = 'acquisition_train_prep.csv'
-
+        
         self.model = None
         self.model_name = None
         self.model_path = '../../models/'
@@ -41,89 +42,6 @@ class BaseModel(object):
         for col in columns:
             df[col].fillna('-1', inplace=True)
             df[col] = l_e.fit_transform(df[col])
-        return df
-
-    # TODO: returar o prep daqui
-    # TODO: criar o pipeline
-    # TODO: # import ast #literal_eval() para eval do latlon e do tags
-    def prep(self, df: pd.DataFrame, prep_file_path: str = None, prep_file_name: str = None):
-        start = perf_counter()
-
-        prep_file_path = prep_file_path or self.path
-        prep_file_name = prep_file_name or self.prep_train_file
-        prep_file = prep_file_path + prep_file_name
-
-        # TODO: Verificar se vai sempre fazer isso mesmo
-        # if os.path.isfile(prep_file):
-        #     end = perf_counter()
-        #     print('Prep time elapsed: {}'.format(end - start))
-        #     return pd.read_csv(prep_file)
-
-        # removing fraud from our analysis
-        # TODO: Verificar isso
-        if 'target_fraud' in df.columns:
-            df = df[df['target_fraud'].isnull()]
-
-        # drop missing values on target_default
-        if 'target_default' in df.columns:
-            df.dropna(subset=['target_default'], inplace=True)
-            # df = df['target_default'].astype('int', copy=False)
-
-        # Drop columns wich will not be used for our model
-        # TODO: explicar todas
-        drop_cols = [
-            'ids',
-            'credit_limit',
-            'channel',
-            'external_data_provider_first_name',
-            'profile_phone_number',
-            'target_fraud',
-            'facebook_profile',
-            'profile_tags',
-            'user_agent'
-        ]
-        for col in drop_cols:
-            if col in df.columns:
-                df.drop(col, axis=1, inplace=True)
-
-        # Bool columns
-        df.applymap(lambda x: 1 if x else 0)
-
-        # Encoding categorical columns
-        # TODO: melhorar essa abordagem
-        # TODO: latlon
-        # TODO: user agent é muito importante, **VALIDAR**
-        # TODO: profile tags - hashing
-        encoding_cols = [
-            'score_1', 'score_2', 'reason',
-            'state', 'zip', 'job_name', 'real_state',
-            'application_time_applied', 'email',
-            'lat_lon', 'marketing_channel', 'shipping_state',
-            'shipping_zip_code'
-        ]
-        df = self.encode(df, encoding_cols)
-
-        # for c in df.columns:
-        #     if df[c].dtype == 'object':
-        #         print('***** {} *****'.format(c))
-        #         # df = self.encode(df, [c])
-
-        # Missing values and inf
-        # TODO: melhorar essa abordagem
-        df.replace([np.inf, -np.inf], np.nan)
-        df.fillna(-1, inplace=True)
-
-        # Boolean cols
-        # print(df['facebook_profile'].dtype)
-        # df = df['facebook_profile'].astype('int', copy=False)
-        # # df = df['facebook_profile'].apply(lambda x: 1 if x else 0)
-        # print(df['facebook_profile'].dtype)
-        # exit()
-
-        # df.to_csv(prep_file)
-
-        end = perf_counter()
-        print('Prep time elapsed: {}'.format(end - start))
         return df
 
     def cross_val_model(self, X, y, n_splits=3):
@@ -160,7 +78,7 @@ class BaseModel(object):
         with open(model_name, 'rb') as model_file:
             self.model = pickle.load(model_file)
 
-    def train(self, file_name: str, file_path: str = None):
+    def train(self, prep, file_name: str, file_path: str = None, target_col: str = 'target'):
         start = perf_counter()
 
         file_path = file_path or self.path
@@ -168,12 +86,12 @@ class BaseModel(object):
 
         # Reading and preparing the dataset
         df = pd.read_csv(train_file)
-        df = df[:100]
-        df = self.prep(df)
+        df = df[:1000]
+        df = prep(df)
 
         # Split X and y
-        X = df.drop('target_default',axis=1).values.astype(np.float)
-        y = df['target_default'].values.astype(np.float)
+        X = df.drop(target_col,axis=1).values.astype(np.float)
+        y = df[target_col].values.astype(np.float)
 
         # train and save the model
         self.cross_val_model(X, y)
