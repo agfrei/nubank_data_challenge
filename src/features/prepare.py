@@ -5,20 +5,26 @@
 # TODO: utils
 import gc
 import os.path
+from functools import reduce
 from multiprocessing import cpu_count
+
 import pandas as pd
 from dask import dataframe as dd
 from dask.multiprocessing import get
-from functools import reduce
 
 
-def normalize_months(df, id_col='ids', month_col='month', normalized_month_col='normalized_month'):
-    """Set the max month of and ID in the dataset equals the max month of the dataset
+def normalize_months(df,
+                     id_col='ids',
+                     month_col='month',
+                     normalized_month_col='normalized_month'):
+    """Set the max month of and ID in the dataset equals the max month
+    of the dataset
 
     Find the max month of a datset and normalizes it backwards.
-    Each ID of the dataset starts with month 0, but has a different number of months,
-    but the last month of each ID represents the last month of the dataset,
-    so we set this month as the max of the dataset, and recount other months backwards.
+    Each ID of the dataset starts with month 0, but has a different
+    number of months, but the last month of each ID represents the last
+    month of the dataset, so we set this month as the max of the dataset,
+    and recount other months backwards.
 
     We can find were is the very first month of each ID in the timeline.
 
@@ -36,6 +42,7 @@ def normalize_months(df, id_col='ids', month_col='month', normalized_month_col='
     Retun:
         This function changes the dataset inplace and do not returns anything
     """
+
     # initiaizes new column with actual months
     df[normalized_month_col] = df[month_col]
 
@@ -198,28 +205,33 @@ def acquisition_init_calculated_columns(df):
     df['total_revolving_min_months'] = 0
     df['max_revolving_months_in_a_row'] = 0
     df['max_revolving_min_months_in_a_row'] = 0
+    df['credit_line'] = 0
     return df
 
 
 def try_min(df, new_col, row, base_col):
     try:
         val = min(df[df['ids'] == row['ids']][base_col])
-    except:
-        print('Min Except', row['ids'])
+    except Exception as e:
+        print('Min Except', row['ids'], e)
         val = 0
 
     row[new_col] = val
     return row
+
 
 def try_reduce(df, new_col, row, base_col):
     try:
         val = reduce(lambda x, y: x + y, df[df['ids'] == row['ids']][base_col])
-    except:
-        print('Reduce Except', row['ids'])
+    except Exception as e:
+        print('Reduce Except', row['ids'], e)
+        if row['ids'] == 'foo':
+            print(row)
         val = 0
 
     row[new_col] = val
     return row
+
 
 def acquisition_calculations(row, spend):
     """Create calculated columns on acquisition dataframe
@@ -228,15 +240,15 @@ def acquisition_calculations(row, spend):
         - row: pandas dataframe row
 
     Return:
-        A modified oandas dataframe row with calculated columns
+        A modified pandas dataframe row with calculated columns
     """
 
     id_slice = spend[spend['ids'] == row['ids']]
+    if len(id_slice) == 0 and row['ids'] != 'foo':
+        print(row['ids'])
+        exit()
 
     row = classify_by_income(row)
-    row = try_min(id_slice, 'member_since', row, 'normalized_month')
-    row = try_min(id_slice, 'max_revolving_months_in_a_row', row, 'revolving_months_in_a_row')
-    row = try_min(id_slice, 'max_revolving_min_months_in_a_row', row, 'revolving_min_months_in_a_row')
     row = try_reduce(id_slice, 'total_spent', row, 'spends')
     row = try_reduce(id_slice, 'total_revolving', row, 'revolving_balance')
     row = try_reduce(id_slice, 'total_minutes', row, 'minutes_cs')
@@ -245,39 +257,58 @@ def acquisition_calculations(row, spend):
     row['total_revolving_months']  = len(spend[(spend['ids'] == row['ids']) & (spend['revolving_balance'] > 0)])
     row['total_months_spent_too_much']  = len(spend[(spend['ids'] == row['ids']) & (spend['spends'] > spend['credit_line'])])
     row['total_revolving_min_months']  = len(spend[(spend['ids'] == row['ids']) & (spend['revolving_balance'] > 0) & (spend['revolving_balance'] > spend['spends'] * 0.9)])
-    # row['max_revolving_months_in_a_row'] = min(spend[spend['ids'] == row['ids']]['revolving_months_in_a_row'])
-    # row['max_revolving_min_months_in_a_row'] = min(spend[spend['ids'] == row['ids']]['revolving_min_months_in_a_row'])
+    row = try_min(id_slice, 'member_since', row, 'normalized_month')
+    row = try_min(id_slice, 'max_revolving_months_in_a_row', row, 'revolving_months_in_a_row')
+    row = try_min(id_slice, 'max_revolving_min_months_in_a_row', row, 'revolving_min_months_in_a_row')
+    try:
+        row['credit_line'] = id_slice.sort_values(by='month').reset_index()['credit_line'][0]
+    except:
+        row['credit_line'] = -1
+        
     return(row)
 
 
 if __name__ == '__main__':
     N_CORES = cpu_count()
-    BASE_PATH = '../data/raw/'
-    NEW_DATA_PATH = '../data/new/'
+    RAW_DATA_PATH = '../../data/raw/'
+    INTERIM_DATA_PATH = '../../data/interim/'
 
+    SPEND_FILE = 'spend_train.csv'
+    ACQUISITION_FILE = 'acquisition_train.csv'
+
+    spend = None
     # Create calculated columns for Spend dataset if it was not created before
-    if os.path.isfile(NEW_DATA_PATH + 'spend_normalized_month.csv'):
-        print('spend_normalized_month.csv Found!')
-        spend = pd.read_csv(NEW_DATA_PATH + 'spend_normalized_month.csv')
+    if os.path.isfile(os.path.join(INTERIM_DATA_PATH, SPEND_FILE)):
+        print('{} Found!'.format(os.path.join(INTERIM_DATA_PATH, SPEND_FILE)))
+        spend = pd.read_csv(os.path.join(INTERIM_DATA_PATH, SPEND_FILE))
     else:
-        print('Creating spend_normalized_month.csv')
-        spend = pd.read_csv(BASE_PATH + 'spend_train.csv')
+        print('Creating {}'.format(os.path.join(INTERIM_DATA_PATH, SPEND_FILE)))
+        spend = pd.read_csv(os.path.join(RAW_DATA_PATH, SPEND_FILE))
         # normalize_months(spend)
         prep_spend(spend)
-        spend.to_csv(NEW_DATA_PATH + 'spend_normalized_month.csv')
-        print('spend_normalized_month.csv Created')
+        spend.to_csv(os.path.join(INTERIM_DATA_PATH, SPEND_FILE))
 
+        print('{} Created'.format(os.path.join(INTERIM_DATA_PATH, SPEND_FILE)))
+
+    acquisition = None
     # Create calculated columns for Acquisitions if it was not created before
-    if os.path.isfile(NEW_DATA_PATH + 'acquisition_train_calculated.csv'):
-        print('acquisition_train_calculated.csv Found!')
-        acquisition = pd.read_csv(NEW_DATA_PATH + 'acquisition_train_calculated.csv')
+    if os.path.isfile(os.path.join(INTERIM_DATA_PATH, ACQUISITION_FILE)):
+        print('{} Found!'.format(os.path.join(INTERIM_DATA_PATH, 
+                                              ACQUISITION_FILE)))
+        acquisition = pd.read_csv(os.path.join(INTERIM_DATA_PATH, 
+                                               ACQUISITION_FILE))
     else:
-        print('Creating acquisition_train_calculated.csv')
-        acquisition = pd.read_csv(BASE_PATH + 'acquisition_train.csv')
+        print('Creating {}'.format(os.path.join(INTERIM_DATA_PATH, 
+                                                ACQUISITION_FILE)))
+        acquisition = pd.read_csv(os.path.join(RAW_DATA_PATH, 
+                                               ACQUISITION_FILE))
         acquisition = acquisition_init_calculated_columns(acquisition)
-        # acquisition = acquisition.apply(acquisition_calculations, args=(spend,), axis=1)
         acquisition = dd.from_pandas(acquisition, npartitions=N_CORES)\
-                        .map_partitions(lambda df, spend=spend: df.apply(acquisition_calculations, args=(spend,), axis=1))\
+                        .map_partitions(lambda df, spend=spend:
+                                        df.apply(acquisition_calculations,
+                                                 args=(spend,), axis=1))\
                         .compute(get=get)
-        acquisition.to_csv(NEW_DATA_PATH + 'acquisition_train_calculated.csv')
-        print('acquisition_train_calculated.csv Created')
+        acquisition.to_csv(os.path.join(INTERIM_DATA_PATH, 
+                                        ACQUISITION_FILE))
+        print('{} Created'.format(os.path.join(INTERIM_DATA_PATH, 
+                                               ACQUISITION_FILE)))
