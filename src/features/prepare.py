@@ -73,9 +73,9 @@ def prep_spend(df):
     exchange_rate = .05
     interest_rate = .17
 
-    id_col='ids'
-    month_col='month'
-    normalized_month_col='normalized_month'
+    id_col = 'ids'
+    month_col = 'month'
+    normalized_month_col = 'normalized_month'
 
     # initiaizes new column with actual months
     df[normalized_month_col] = df[month_col]
@@ -87,7 +87,6 @@ def prep_spend(df):
     df['interest'] = 0
     df['p_paid'] = 0
     df['p_spend'] = 0
-
 
     # max month in dataframe
     max_month = max(df[month_col])
@@ -130,8 +129,12 @@ def prep_spend(df):
             df.at[index, 'revolving_months_in_a_row'] = months_count
             df.at[index, 'revolving_min_months_in_a_row'] = months_min_count
             df.at[index, 'invoice'] = row['spends'] + previous_debt
-            df.at[index, 'income_spend'] = row['spends'] * (exchange_rate) * (1 - inflation)
-            df.at[index, 'income_interest'] = last_revolving_balance * interest_rate  * (1 - inflation)
+            df.at[index, 'income_spend'] = row['spends'] * (exchange_rate) * (
+                1 - inflation)
+            df.at[
+                index,
+                'income_interest'] = last_revolving_balance * interest_rate * (
+                    1 - inflation)
             df.at[index, 'interest'] = last_revolving_balance * interest_rate
             # df.at[index, 'p_paid'] = 0
             # df.at[index, 'p_spend'] = 0
@@ -183,7 +186,8 @@ def calculate_member_since(row, spend):
     """
 
     try:
-        current_id_min_month = min(spend[spend['ids'] == row['ids']]['normalized_month'])
+        current_id_min_month = min(
+            spend[spend['ids'] == row['ids']]['normalized_month'])
     except:
         print('Except', row['ids'])
         current_id_min_month = 0
@@ -195,7 +199,7 @@ def calculate_member_since(row, spend):
 def acquisition_init_calculated_columns(df):
     df['class'] = ''
     df['member_since'] = 0
-    df['total_spent']  = 0
+    df['total_spent'] = 0
     df['total_revolving'] = 0
     df['total_minutes'] = 0
     df['total_card_requests'] = 0
@@ -253,19 +257,27 @@ def acquisition_calculations(row, spend):
     row = try_reduce(id_slice, 'total_revolving', row, 'revolving_balance')
     row = try_reduce(id_slice, 'total_minutes', row, 'minutes_cs')
     row = try_reduce(id_slice, 'total_card_requests', row, 'card_request')
-    row['total_months']  = len(id_slice)
-    row['total_revolving_months']  = len(spend[(spend['ids'] == row['ids']) & (spend['revolving_balance'] > 0)])
-    row['total_months_spent_too_much']  = len(spend[(spend['ids'] == row['ids']) & (spend['spends'] > spend['credit_line'])])
-    row['total_revolving_min_months']  = len(spend[(spend['ids'] == row['ids']) & (spend['revolving_balance'] > 0) & (spend['revolving_balance'] > spend['spends'] * 0.9)])
+    row['total_months'] = len(id_slice)
+    row['total_revolving_months'] = len(
+        spend[(spend['ids'] == row['ids']) & (spend['revolving_balance'] > 0)])
+    row['total_months_spent_too_much'] = len(
+        spend[(spend['ids'] == row['ids'])
+              & (spend['spends'] > spend['credit_line'])])
+    row['total_revolving_min_months'] = len(
+        spend[(spend['ids'] == row['ids']) & (spend['revolving_balance'] > 0) &
+              (spend['revolving_balance'] > spend['spends'] * 0.9)])
     row = try_min(id_slice, 'member_since', row, 'normalized_month')
-    row = try_min(id_slice, 'max_revolving_months_in_a_row', row, 'revolving_months_in_a_row')
-    row = try_min(id_slice, 'max_revolving_min_months_in_a_row', row, 'revolving_min_months_in_a_row')
+    row = try_min(id_slice, 'max_revolving_months_in_a_row', row,
+                  'revolving_months_in_a_row')
+    row = try_min(id_slice, 'max_revolving_min_months_in_a_row', row,
+                  'revolving_min_months_in_a_row')
     try:
-        row['credit_line'] = id_slice.sort_values(by='month').reset_index()['credit_line'][0]
+        row['credit_line'] = id_slice.sort_values(
+            by='month').reset_index()['credit_line'][0]
     except:
         row['credit_line'] = -1
-        
-    return(row)
+
+    return (row)
 
 
 if __name__ == '__main__':
@@ -282,33 +294,34 @@ if __name__ == '__main__':
         print('{} Found!'.format(os.path.join(INTERIM_DATA_PATH, SPEND_FILE)))
         spend = pd.read_csv(os.path.join(INTERIM_DATA_PATH, SPEND_FILE))
     else:
-        print('Creating {}'.format(os.path.join(INTERIM_DATA_PATH, SPEND_FILE)))
+        print('Creating {}'.format(
+            os.path.join(INTERIM_DATA_PATH, SPEND_FILE)))
         spend = pd.read_csv(os.path.join(RAW_DATA_PATH, SPEND_FILE))
         # normalize_months(spend)
         prep_spend(spend)
-        spend.to_csv(os.path.join(INTERIM_DATA_PATH, SPEND_FILE))
+        spend.to_csv(os.path.join(INTERIM_DATA_PATH, SPEND_FILE), index=False)
 
         print('{} Created'.format(os.path.join(INTERIM_DATA_PATH, SPEND_FILE)))
 
     acquisition = None
     # Create calculated columns for Acquisitions if it was not created before
     if os.path.isfile(os.path.join(INTERIM_DATA_PATH, ACQUISITION_FILE)):
-        print('{} Found!'.format(os.path.join(INTERIM_DATA_PATH, 
-                                              ACQUISITION_FILE)))
-        acquisition = pd.read_csv(os.path.join(INTERIM_DATA_PATH, 
-                                               ACQUISITION_FILE))
+        print('{} Found!'.format(
+            os.path.join(INTERIM_DATA_PATH, ACQUISITION_FILE)))
+        acquisition = pd.read_csv(
+            os.path.join(INTERIM_DATA_PATH, ACQUISITION_FILE))
     else:
-        print('Creating {}'.format(os.path.join(INTERIM_DATA_PATH, 
-                                                ACQUISITION_FILE)))
-        acquisition = pd.read_csv(os.path.join(RAW_DATA_PATH, 
-                                               ACQUISITION_FILE))
+        print('Creating {}'.format(
+            os.path.join(INTERIM_DATA_PATH, ACQUISITION_FILE)))
+        acquisition = pd.read_csv(
+            os.path.join(RAW_DATA_PATH, ACQUISITION_FILE))
         acquisition = acquisition_init_calculated_columns(acquisition)
         acquisition = dd.from_pandas(acquisition, npartitions=N_CORES)\
                         .map_partitions(lambda df, spend=spend:
                                         df.apply(acquisition_calculations,
                                                  args=(spend,), axis=1))\
                         .compute(get=get)
-        acquisition.to_csv(os.path.join(INTERIM_DATA_PATH, 
-                                        ACQUISITION_FILE))
-        print('{} Created'.format(os.path.join(INTERIM_DATA_PATH, 
-                                               ACQUISITION_FILE)))
+        acquisition.to_csv(
+            os.path.join(INTERIM_DATA_PATH, ACQUISITION_FILE), index=False)
+        print('{} Created'.format(
+            os.path.join(INTERIM_DATA_PATH, ACQUISITION_FILE)))

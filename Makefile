@@ -79,6 +79,7 @@ test_environment:
 #################################################################################
 # PROJECT RULES                                                                 #
 #################################################################################
+.PHONY: train_default train_fraud train_spend predict_default predict_fraud predict_spend train predict train_predict
 train_default:
 	$(PYTHON_INTERPRETER) src/models/train_default.py
 
@@ -96,6 +97,12 @@ predict_fraud:
 
 predict_spend:
 	$(PYTHON_INTERPRETER) src/models/predict_spend.py
+
+train: train_default train_fraud train_spend
+
+predict: predict_default predict_fraud predict_spend
+
+train_predict: train predict
 
 #################################################################################
 # Self Documenting Commands                                                     #

@@ -28,7 +28,8 @@ class SpendSVR(BaseModel):
         if saved_model:
             self.model_name = saved_model
         else:
-            datetime_now = datetime.datetime.now().replace(microsecond=0).isoformat().replace(':','-')
+            datetime_now = datetime.datetime.now().replace(
+                microsecond=0).isoformat().replace(':', '-')
             self.model_name = datetime_now + '_spend_svr.bin'
 
         self.model = SVR(**params)
@@ -36,7 +37,10 @@ class SpendSVR(BaseModel):
     # TODO: returar o prep daqui
     # TODO: criar o pipeline
     # TODO: # import ast #literal_eval() para eval do latlon e do tags
-    def prep(self, df: pd.DataFrame, prep_file_path: str = None, prep_file_name: str = None):
+    def prep(self,
+             df: pd.DataFrame,
+             prep_file_path: str = None,
+             prep_file_name: str = None):
         start = perf_counter()
 
         prep_file_path = prep_file_path or self.path
@@ -51,17 +55,17 @@ class SpendSVR(BaseModel):
 
         # Drop columns wich will not be used for our model
         # TODO: explicar todas
+        # TODO: O arquivo foi salvo com a coluna de index, 
+        # remover ao salvar, por isso estou tirando a coluna Unnamed: 0
         drop_cols = [
-            'ids',
-            'credit_limit',
-            'channel',
-            'external_data_provider_first_name',
-            'profile_phone_number',
-            'target_default',
-            'target_fraud',
-            'facebook_profile',
-            'profile_tags',
-            'user_agent'
+            'ids', 'credit_limit', 'channel', 'Unnamed: 0',
+            'external_data_provider_first_name', 'profile_phone_number',
+            'target_default', 'target_fraud', 'facebook_profile',
+            'profile_tags', 'user_agent', 'class', 'member_since', 
+            'total_spent', 'total_revolving', 'total_minutes', 
+            'total_card_requests', 'total_months', 'total_revolving_months', 
+            'total_months_spent_too_much', 'total_revolving_min_months', 
+            'max_revolving_months_in_a_row', 'max_revolving_min_months_in_a_row'
         ]
         for col in drop_cols:
             if col in df.columns:
@@ -76,11 +80,9 @@ class SpendSVR(BaseModel):
         # TODO: user agent é muito importante, **VALIDAR**
         # TODO: profile tags - hashing
         encoding_cols = [
-            'score_1', 'score_2', 'reason',
-            'state', 'zip', 'job_name', 'real_state',
-            'application_time_applied', 'email',
-            'lat_lon', 'marketing_channel', 'shipping_state',
-            'shipping_zip_code'
+            'score_1', 'score_2', 'reason', 'state', 'zip', 'job_name',
+            'real_state', 'application_time_applied', 'email', 'lat_lon',
+            'marketing_channel', 'shipping_state', 'shipping_zip_code'
         ]
         df = self.encode(df, encoding_cols)
 
@@ -91,7 +93,7 @@ class SpendSVR(BaseModel):
 
         # Missing values and inf
         # TODO: melhorar essa abordagem
-        df.replace([np.inf, -np.inf], np.nan)
+        df.replace([np.inf, -np.inf], np.nan, inplace=True)
         df.fillna(-1, inplace=True)
 
         # Boolean cols
@@ -107,7 +109,21 @@ class SpendSVR(BaseModel):
         print('Prep time elapsed: {}'.format(end - start))
         return df
 
-    # TODO: Usar o pipeline para resolver isso  
+    # TODO: Usar o pipeline para resolver isso
     def train(self, file_name: str, file_path: str = None):
-        super().train(self.prep, file_name=file_name, file_path=file_path, target_col='credit_line')
+        super().train(
+            self.prep,
+            file_name=file_name,
+            file_path=file_path,
+            target_col='credit_line')
     
+    def predict(self, file_name: str, file_path: str = None):
+        super().predict(
+            self.prep,
+            file_name=file_name,
+            file_path=file_path,
+            output_file_name='spending_submission.csv',
+            output_path='deliverable/spend/',
+            target_col='spend_score',
+            output_format='{}',
+            predict_type = 'score')

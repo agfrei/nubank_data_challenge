@@ -12,7 +12,10 @@ from dask.multiprocessing import get
 from functools import reduce
 
 
-def normalize_months(df, id_col='ids', month_col='month', normalized_month_col='normalized_month'):
+def normalize_months(df,
+                     id_col='ids',
+                     month_col='month',
+                     normalized_month_col='normalized_month'):
     """Set the max month of and ID in the dataset equals the max month of the dataset
 
     Find the max month of a datset and normalizes it backwards.
@@ -66,9 +69,9 @@ def prep_spend(df):
     exchange_rate = .05
     interest_rate = .17
 
-    id_col='ids'
-    month_col='month'
-    normalized_month_col='normalized_month'
+    id_col = 'ids'
+    month_col = 'month'
+    normalized_month_col = 'normalized_month'
 
     # initiaizes new column with actual months
     df[normalized_month_col] = df[month_col]
@@ -80,7 +83,6 @@ def prep_spend(df):
     df['interest'] = 0
     df['p_paid'] = 0
     df['p_spend'] = 0
-
 
     # max month in dataframe
     max_month = max(df[month_col])
@@ -123,8 +125,12 @@ def prep_spend(df):
             df.at[index, 'revolving_months_in_a_row'] = months_count
             df.at[index, 'revolving_min_months_in_a_row'] = months_min_count
             df.at[index, 'invoice'] = row['spends'] + previous_debt
-            df.at[index, 'income_spend'] = row['spends'] * (exchange_rate) * (1 - inflation)
-            df.at[index, 'income_interest'] = last_revolving_balance * interest_rate  * (1 - inflation)
+            df.at[index, 'income_spend'] = row['spends'] * (exchange_rate) * (
+                1 - inflation)
+            df.at[
+                index,
+                'income_interest'] = last_revolving_balance * interest_rate * (
+                    1 - inflation)
             df.at[index, 'interest'] = last_revolving_balance * interest_rate
             # df.at[index, 'p_paid'] = 0
             # df.at[index, 'p_spend'] = 0
@@ -176,7 +182,8 @@ def calculate_member_since(row, spend):
     """
 
     try:
-        current_id_min_month = min(spend[spend['ids'] == row['ids']]['normalized_month'])
+        current_id_min_month = min(
+            spend[spend['ids'] == row['ids']]['normalized_month'])
     except:
         print('Except', row['ids'])
         current_id_min_month = 0
@@ -188,7 +195,7 @@ def calculate_member_since(row, spend):
 def acquisition_init_calculated_columns(df):
     df['class'] = ''
     df['member_since'] = 0
-    df['total_spent']  = 0
+    df['total_spent'] = 0
     df['total_revolving'] = 0
     df['total_minutes'] = 0
     df['total_card_requests'] = 0
@@ -211,6 +218,7 @@ def try_min(df, new_col, row, base_col):
     row[new_col] = val
     return row
 
+
 def try_reduce(df, new_col, row, base_col):
     try:
         val = reduce(lambda x, y: x + y, df[df['ids'] == row['ids']][base_col])
@@ -220,6 +228,7 @@ def try_reduce(df, new_col, row, base_col):
 
     row[new_col] = val
     return row
+
 
 def acquisition_calculations(row, spend):
     """Create calculated columns on acquisition dataframe
@@ -232,12 +241,13 @@ def acquisition_calculations(row, spend):
     """
 
     try:
-        credit_line = spend[spend['ids'] == row['ids']].sort_values(by='month')['credit_line'][0]
+        credit_line = spend[spend['ids'] == row['ids']].sort_values(
+            by='month')['credit_line'][0]
     except:
         credit_line = -1
 
-    row['credit_line']  = credit_line
-    return(row)
+    row['credit_line'] = credit_line
+    return (row)
 
 
 if __name__ == '__main__':
@@ -249,14 +259,17 @@ if __name__ == '__main__':
     # Create calculated columns for Acquisitions if it was not created before
     if os.path.isfile(NEW_DATA_PATH + 'acquisition_train_calculated_v2.csv'):
         print('acquisition_train_calculated.csv Found!')
-        acquisition = pd.read_csv(NEW_DATA_PATH + 'acquisition_train_calculated_v2.csv')
+        acquisition = pd.read_csv(NEW_DATA_PATH +
+                                  'acquisition_train_calculated_v2.csv')
     else:
         print('Creating acquisition_train_calculated_v2.csv')
-        acquisition = pd.read_csv(BASE_PATH + 'acquisition_train_calculated.csv')
+        acquisition = pd.read_csv(BASE_PATH +
+                                  'acquisition_train_calculated.csv')
         acquisition = acquisition_init_calculated_columns(acquisition)
         # acquisition = acquisition.apply(acquisition_calculations, args=(spend,), axis=1)
         acquisition = dd.from_pandas(acquisition, npartitions=N_CORES)\
                         .map_partitions(lambda df, spend=spend: df.apply(acquisition_calculations, args=(spend,), axis=1))\
                         .compute(get=get)
-        acquisition.to_csv(NEW_DATA_PATH + 'acquisition_train_calculated_v2.csv')
+        acquisition.to_csv(NEW_DATA_PATH +
+                           'acquisition_train_calculated_v2.csv')
         print('acquisition_train_calculated_v2.csv Created')
