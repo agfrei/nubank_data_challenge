@@ -204,11 +204,8 @@ def acquisition_init_calculated_columns(df):
     df['total_minutes'] = 0
     df['total_card_requests'] = 0
     df['total_months'] = 0
+    df['avg_spend'] = 0
     df['total_revolving_months'] = 0
-    df['total_months_spent_too_much'] = 0
-    df['total_revolving_min_months'] = 0
-    df['max_revolving_months_in_a_row'] = 0
-    df['max_revolving_min_months_in_a_row'] = 0
     df['credit_line'] = 0
     return df
 
@@ -260,17 +257,8 @@ def acquisition_calculations(row, spend):
     row['total_months'] = len(id_slice)
     row['total_revolving_months'] = len(
         spend[(spend['ids'] == row['ids']) & (spend['revolving_balance'] > 0)])
-    row['total_months_spent_too_much'] = len(
-        spend[(spend['ids'] == row['ids'])
-              & (spend['spends'] > spend['credit_line'])])
-    row['total_revolving_min_months'] = len(
-        spend[(spend['ids'] == row['ids']) & (spend['revolving_balance'] > 0) &
-              (spend['revolving_balance'] > spend['spends'] * 0.9)])
     row = try_min(id_slice, 'member_since', row, 'normalized_month')
-    row = try_min(id_slice, 'max_revolving_months_in_a_row', row,
-                  'revolving_months_in_a_row')
-    row = try_min(id_slice, 'max_revolving_min_months_in_a_row', row,
-                  'revolving_min_months_in_a_row')
+    df['avg_spend'] = df['total_spent'] / df['total_months']
     try:
         row['credit_line'] = id_slice.sort_values(
             by='month').reset_index()['credit_line'][0]
