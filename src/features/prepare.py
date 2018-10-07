@@ -121,6 +121,8 @@ def prep_spend(df):
                     months_min_count = 0
 
             previous_debt = last_revolving_balance * (1 + interest_rate)
+            invoice = row['spends'] + previous_debt
+            paid = invoice - row['revolving_balance']
 
             # df.set_value(index, normalized_month_col, row[month_col] + diff_month)
             # df.set_value(index, 'revolving_months_in_a_row', months_count)
@@ -128,7 +130,7 @@ def prep_spend(df):
             df.at[index, normalized_month_col] = row[month_col] + diff_month
             df.at[index, 'revolving_months_in_a_row'] = months_count
             df.at[index, 'revolving_min_months_in_a_row'] = months_min_count
-            df.at[index, 'invoice'] = row['spends'] + previous_debt
+            df.at[index, 'invoice'] = invoice
             df.at[index, 'income_spend'] = row['spends'] * (exchange_rate) * (
                 1 - inflation)
             df.at[
@@ -136,8 +138,8 @@ def prep_spend(df):
                 'income_interest'] = last_revolving_balance * interest_rate * (
                     1 - inflation)
             df.at[index, 'interest'] = last_revolving_balance * interest_rate
-            # df.at[index, 'p_paid'] = 0
-            # df.at[index, 'p_spend'] = 0
+            df.at[index, 'p_paid'] = paid / invoice * 100 if invoice > 0 else 0
+            df.at[index, 'p_spend'] = row['spends'] / row['credit_line'] * 100
 
             last_revolving_balance = row['revolving_balance']
 
@@ -258,7 +260,10 @@ def acquisition_calculations(row, spend):
     row['total_revolving_months'] = len(
         spend[(spend['ids'] == row['ids']) & (spend['revolving_balance'] > 0)])
     row = try_min(id_slice, 'member_since', row, 'normalized_month')
-    df['avg_spend'] = df['total_spent'] / df['total_months']
+    
+    if row['total_months'] > 0:
+        row['avg_spend'] = row['total_spent'] / row['total_months']
+    
     try:
         row['credit_line'] = id_slice.sort_values(
             by='month').reset_index()['credit_line'][0]
