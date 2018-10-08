@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 """Pre-processing the dataset."""
-# TODO: ordenar os imports
-# TODO: install xgboost, lightgbm, catboost
-# TODO: conda remove seaborn, conda install seaborn=0.9.0
-# TODO: pip install dask
-# TODO: testar com make
 import gc
 import os.path
 from functools import reduce

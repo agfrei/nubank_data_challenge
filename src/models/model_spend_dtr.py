@@ -28,7 +28,7 @@ class SpendDTR(BaseModel):
         super().__init__()
 
         # Creating a Logist decision tree regression model
-        self.model = DecisionTreeRegressor()
+        self.model = DecisionTreeRegressor(max_features='auto', random_state=7)
 
         self.model_scoring = 'neg_mean_squared_error'
         self.model_type = 'regressor'

@@ -11,6 +11,7 @@ from time import perf_counter
 
 from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn.model_selection import cross_val_score
+from imblearn.over_sampling import SMOTE
 
 import warnings
 import logging
@@ -166,7 +167,8 @@ class BaseModel(object):
               file_name: str,
               file_path: str = None,
               fit_method: str = None,
-              target_col: str = 'target'):
+              target_col: str = 'target',
+              imb_learn: bool = False):
         """Orchestrate the model trainning.
 
         Args:
@@ -175,6 +177,7 @@ class BaseModel(object):
             - file_path (str optional): The path to the `file_name`. Default to `data/interim`
             - fit_method (str optional): If None, uses `cros_val_model`, else uses this method of the model directly
             - target_col (str optional): The name of the target col in `file_name`. Default to `target`
+            - imb_learn (bool): If True, uses SMOTE for imbalanced classes. Default to False
         """
         start = perf_counter()
 
@@ -186,9 +189,12 @@ class BaseModel(object):
         df = prep(df, prep_file_name=file_name)
 
         # Split X and y
-        X = df.drop(target_col, axis=1)
-        X = X.values.astype(np.float)
+        X = df.drop(target_col, axis=1).values.astype(np.float)
         y = df[target_col].values.astype(np.float)
+
+        if imb_learn:
+            smt = SMOTE(random_state=42, k_neighbors=1)
+            X, y = smt.fit_sample(X, y)
 
         # train and save the model
         if fit_method == None:

@@ -1,7 +1,0 @@
-receita sobre as compras = spends * tx intercambio - inflação
-receita sobre o juros = balanço rolado anterior * tx de juros - inflação
-fatura = spends + balanço rolado anterior * tx de juros
-receita total = receita sobre as compras + receita sobre o juros
-percentual pago = (fatura - balanço rolado atual) / fatura
-% gasto em relação ao limite = fatura / limite ou spends / limite?
-

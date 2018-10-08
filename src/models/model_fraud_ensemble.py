@@ -163,7 +163,8 @@ class FraudEnsemble(BaseModel):
             file_name=file_name,
             file_path=file_path,
             fit_method='fit',
-            target_col='target_fraud')
+            target_col='target_fraud',
+            imb_learn=True)
 
     def predict(self, file_name: str, file_path: str = None):
         """Make a prediction calling the `predict` method of super class.
