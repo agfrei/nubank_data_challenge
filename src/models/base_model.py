@@ -255,3 +255,4 @@ class BaseModel(object):
 
         end = perf_counter()
         print('Predict time elapsed: {}'.format(end - start))
+        return df_pred

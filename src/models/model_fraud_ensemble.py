@@ -177,6 +177,10 @@ class FraudEnsemble(BaseModel):
         Args:
             - file_path (str): The path to the `file_name`
             - file_name (str): The CSV file name with features to predict using a saved model
+        
+        Returns:
+            The prediction
+            
         """
         pred = super().predict(
             self.prep,
@@ -187,3 +191,5 @@ class FraudEnsemble(BaseModel):
             output_target_col='fraud',
             output_format='{:.04f}',
             predict_method='predict')
+
+        return pred

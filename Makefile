@@ -98,6 +98,9 @@ predict_fraud:
 predict_spend:
 	$(PYTHON_INTERPRETER) src/models/predict_spend.py $(model)
 
+credit_approve:
+	$(PYTHON_INTERPRETER) src/models/credit_approve.py
+
 train: train_default train_fraud train_spend
 
 predict: predict_default predict_fraud predict_spend

@@ -170,6 +170,10 @@ class DefaultEnsemble(BaseModel):
         Args:
             - file_path (str): The path to the `file_name`
             - file_name (str): The CSV file name with features to predict using a saved model
+
+        Returns:
+            The prediction
+            
         """
         pred = super().predict(
             self.prep,
@@ -180,3 +184,5 @@ class DefaultEnsemble(BaseModel):
             output_target_col='default',
             output_format='{:.04f}',
             predict_method='predict')
+
+        return pred
