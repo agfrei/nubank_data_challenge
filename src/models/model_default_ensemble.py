@@ -54,9 +54,6 @@ class DefaultEnsemble(BaseModel):
         stack = Ensemble(
             n_splits=3, stacker=log_model, base_models=(rf_model, xgb_model))
 
-        # TODO: self.model_scoring = 'roc_auc'
-        # TODO: self.prep_train_file = 'acquisition_train.csv'
-
         # To use as a prefix of model and processed dataset
         self.datetime_prefix = datetime.datetime.now().replace(
             microsecond=0).isoformat().replace(':', '-')
@@ -77,7 +74,6 @@ class DefaultEnsemble(BaseModel):
         df['lon'] = df['lat_lon'].apply(lambda x: ast.literal_eval(x)[1])
         return df
 
-    # TODO: criar o pipeline
     def prep(self,
              df: pd.DataFrame,
              prep_file_name: str,
@@ -148,7 +144,6 @@ class DefaultEnsemble(BaseModel):
         print('Prep time elapsed: {}'.format(end - start))
         return df
 
-    # TODO: Usar o pipeline para resolver isso
     def train(self, file_name: str, file_path: str = None):
         """Train the model calling the `train` method of super class.
         
@@ -161,8 +156,7 @@ class DefaultEnsemble(BaseModel):
             file_name=file_name,
             file_path=file_path,
             fit_method='fit',
-            target_col='target_default',
-            model_type='clas')
+            target_col='target_default')
 
     def predict(self, file_name: str, file_path: str = None):
         """Make a prediction calling the `predict` method of super class.
@@ -173,7 +167,7 @@ class DefaultEnsemble(BaseModel):
 
         Returns:
             The prediction
-            
+
         """
         pred = super().predict(
             self.prep,
@@ -182,7 +176,7 @@ class DefaultEnsemble(BaseModel):
             output_file_name='default_submission.csv',
             output_path='deliverable/default/',
             output_target_col='default',
-            output_format='{:.04f}',
+            output_format='%.04f',
             predict_method='predict')
 
         return pred

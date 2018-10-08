@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Train a model for predict fraud."""
 from model_fraud_ensemble import FraudEnsemble
 

@@ -80,6 +80,9 @@ test_environment:
 # PROJECT RULES                                                                 #
 #################################################################################
 .PHONY: train_default train_fraud train_spend predict_default predict_fraud predict_spend train predict train_predict
+build_features:
+	$(PYTHON_INTERPRETER) src/features/build_features.py
+
 train_default:
 	$(PYTHON_INTERPRETER) src/models/train_default.py
 

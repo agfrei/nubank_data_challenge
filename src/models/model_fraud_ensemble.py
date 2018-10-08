@@ -54,9 +54,6 @@ class FraudEnsemble(BaseModel):
         stack = Ensemble(
             n_splits=3, stacker=log_model, base_models=(rf_model, xgb_model))
 
-        # TODO: self.model_scoring = 'roc_auc'
-        # TODO: self.prep_train_file = 'acquisition_train.csv'
-
         # To use as a prefix of model and processed dataset
         self.datetime_prefix = datetime.datetime.now().replace(
             microsecond=0).isoformat().replace(':', '-')
@@ -85,7 +82,6 @@ class FraudEnsemble(BaseModel):
             df['target_fraud'] = df['target_fraud'].apply(lambda x: 0 if x == 'this_is_not_fraud' else 1)
         return df
 
-    # TODO: criar o pipeline
     def prep(self,
              df: pd.DataFrame,
              prep_file_name: str,
@@ -155,7 +151,6 @@ class FraudEnsemble(BaseModel):
         print('Prep time elapsed: {}'.format(end - start))
         return df
 
-    # TODO: Usar o pipeline para resolver isso
     def train(self, file_name: str, file_path: str = None):
         """Train the model calling the `train` method of super class.
         
@@ -168,8 +163,7 @@ class FraudEnsemble(BaseModel):
             file_name=file_name,
             file_path=file_path,
             fit_method='fit',
-            target_col='target_fraud',
-            model_type='clas')
+            target_col='target_fraud')
 
     def predict(self, file_name: str, file_path: str = None):
         """Make a prediction calling the `predict` method of super class.
@@ -186,10 +180,10 @@ class FraudEnsemble(BaseModel):
             self.prep,
             file_name=file_name,
             file_path=file_path,
-            output_file_name='default_submission.csv',
+            output_file_name='fraud_submission.csv',
             output_path='deliverable/fraud/',
             output_target_col='fraud',
-            output_format='{:.04f}',
+            output_format='%.04f',
             predict_method='predict')
 
         return pred

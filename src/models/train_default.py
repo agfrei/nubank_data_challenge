@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Train a model for predict default."""
 from model_default_ensemble import DefaultEnsemble
 
