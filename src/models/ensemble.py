@@ -1,0 +1,90 @@
+# -*- coding: utf-8 -*-
+"""Define the Ensemble class."""
+import numpy as np
+from sklearn.metrics import confusion_matrix
+from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import cross_val_score, cross_val_predict
+
+
+class Ensemble(object):
+    """Stack a set of classifiers."""
+
+    def __init__(self, n_splits, stacker, base_models):
+        """Init a new object.
+
+        Args:
+            - n_splits: number of splits to k fold
+            - stacker: model for join base models
+            - base_models: models for stacking
+
+        """
+        self.n_splits = n_splits
+        self.stacker = stacker
+        self.base_models = base_models
+
+    def fit(self, X, y):
+        """Fit the base models and the stacker model.
+
+        Args:
+            - X: features
+            - y: targets
+
+        """
+        X = np.array(X)
+        y = np.array(y)
+
+        folds = list(
+            StratifiedKFold(
+                n_splits=self.n_splits, shuffle=True, random_state=42).split(
+                    X, y))
+
+        S_train = np.zeros((X.shape[0], len(self.base_models)))
+        S_test = np.zeros((X.shape[0], len(self.base_models)))
+        for i, clf in enumerate(self.base_models):
+
+            S_test_i = np.zeros((X.shape[0], self.n_splits))
+
+            for j, (train_idx, test_idx) in enumerate(folds):
+                X_train = X[train_idx]
+                y_train = y[train_idx]
+                X_holdout = X[test_idx]
+
+                print("Fit %s fold %d" % (str(clf).split('(')[0], j + 1))
+                clf.fit(X_train, y_train)
+                y_pred = clf.predict_proba(X_holdout)[:, 1]
+
+                S_train[test_idx, i] = y_pred
+
+        results = cross_val_score(
+            self.stacker, S_train, y, cv=3, scoring='roc_auc')
+
+        y_pred = cross_val_predict(self.stacker, S_train, y, cv=3)
+        conf_mat = confusion_matrix(y, y_pred)
+
+        self.stacker.fit(S_train, y)
+        print("Stacker score: %.5f" % (results.mean()))
+        print(conf_mat)
+
+    def predict(self, T):
+        """Predict using stacker and base models.
+        
+        Arqs:
+            - T: a pandas DataFrame with features to predict
+            
+        Returns:
+            The `predict_proba` of the stack
+
+        """
+        T = np.array(T)
+
+        S_test = np.zeros((T.shape[0], len(self.base_models)))
+        for i, clf in enumerate(self.base_models):
+            S_test[:, i] = clf.predict_proba(T)[:, 1]
+
+        res = self.stacker.predict_proba(S_test)[:, 1]
+        return res
+
+    def fit_predict(self, X, y, T):
+        """Run fit and predict methods."""
+        self.fit(X, y)
+        return self.predict(T)

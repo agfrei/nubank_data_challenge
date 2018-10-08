@@ -1,7 +1,25 @@
-from model_default_xgboost import DefaultXGBoost
+"""Make predictions for default using ensemble."""
+import glob
+import os
+import sys
+from model_default_ensemble import DefaultEnsemble
 
-# TODO: pegar via linha de comando o modelo a ser usado, ou pegar o último caso não passe nenhum
 if __name__ == '__main__':
-    print('Predicting: XGBoost for Default')
-    xgb = DefaultXGBoost(saved_model='2018-10-06T03-23-50_default_xgboost.bin')
-    xgb.predict(file_path='data/raw/', file_name='acquisition_test.csv')
+    model_name = None
+
+    # check if a model was passed via command line
+    if len(sys.argv) >= 2:
+        model_name = sys.argv[1]
+
+    # get the most recent model
+    if model_name == None:
+        model_name = sorted(
+            glob.glob(os.path.join('models/', '*_default_ensemble.bin')))[-1]
+        model_name = model_name.replace('models/', '')
+
+    print('Predicting: Ensemble for Default - Using model: {}'.format(
+        model_name))
+
+    # make a prediction
+    model = DefaultEnsemble(saved_model=model_name)
+    model.predict(file_path='data/raw/', file_name='acquisition_test.csv')

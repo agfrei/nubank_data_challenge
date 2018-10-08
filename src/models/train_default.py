@@ -1,6 +1,7 @@
-from model_default_xgboost import DefaultXGBoost
+"""Train a model for predict default."""
+from model_default_ensemble import DefaultEnsemble
 
 if __name__ == '__main__':
-    print('Trainnig: XGBoost for Default')
-    xgb = DefaultXGBoost()
-    xgb.train(file_name='acquisition_train.csv')
+    print('Trainnig: Ensemble for Default')
+    model = DefaultEnsemble()
+    model.train(file_name='acquisition_train.csv')

@@ -90,13 +90,13 @@ train_spend:
 	$(PYTHON_INTERPRETER) src/models/train_spend.py
 
 predict_default:
-	$(PYTHON_INTERPRETER) src/models/predict_default.py
+	$(PYTHON_INTERPRETER) src/models/predict_default.py $(model)
 
 predict_fraud:
-	$(PYTHON_INTERPRETER) src/models/predict_fraud.py
+	$(PYTHON_INTERPRETER) src/models/predict_fraud.py $(model)
 
 predict_spend:
-	$(PYTHON_INTERPRETER) src/models/predict_spend.py
+	$(PYTHON_INTERPRETER) src/models/predict_spend.py $(model)
 
 train: train_default train_fraud train_spend
 
