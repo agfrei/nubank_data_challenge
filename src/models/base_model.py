@@ -184,7 +184,7 @@ class BaseModel(object):
         train_file = os.path.join(file_path, file_name)
 
         # Reading and preparing the dataset
-        df = pd.read_csv(train_file)[:1000]  # TODO: REMOVER O SLICING
+        df = pd.read_csv(train_file)  # TODO: REMOVER O SLICING
         df = prep(df, prep_file_name=file_name)
 
         # Split X and y
@@ -234,9 +234,9 @@ class BaseModel(object):
         predict_file = os.path.join(file_path, file_name)
 
         # Reading and preparing the dataset
-        df = pd.read_csv(predict_file)[:10]  # TODO: REMOVER O SLICING
+        df = pd.read_csv(predict_file)  # TODO: REMOVER O SLICING
         ids = df[id_col].values
-        df = prep(df)
+        df = prep(df, prep_file_name=file_name)
         print(df.columns)  # TODO:
         X = df.values.astype(np.float)
 
@@ -244,7 +244,7 @@ class BaseModel(object):
         self.load_model()
 
         pred = eval('self.model.{}(df)'.format(predict_method))
-        if predict_method == 'predict_proba':
+        if predict_method == 'predict_proba':  # TODO: predict proba????
             pred = [output_format.format(p[1]) for p in pred]
 
         df_pred = pd.DataFrame(

@@ -1,6 +1,7 @@
-from model_fraud_xgboost import FraudXGBoost
+"""Train a model for predict fraud."""
+from model_fraud_ensemble import FraudEnsemble
 
 if __name__ == '__main__':
-    print('Trainnig: XGBoost for Fraud')
-    xgb = FraudXGBoost()
-    xgb.train(file_name='acquisition_train.csv')
+    print('Trainnig: Ensemble for Fraud')
+    model = FraudEnsemble()
+    model.train(file_name='acquisition_train.csv')

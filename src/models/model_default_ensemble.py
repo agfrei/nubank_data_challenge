@@ -3,7 +3,9 @@
 from base_model import BaseModel
 from ensemble import Ensemble
 from preprocessing import Prep
+
 import datetime
+import os
 
 from xgboost import XGBClassifier, Booster
 from sklearn.ensemble import RandomForestClassifier
@@ -139,7 +141,7 @@ class DefaultEnsemble(BaseModel):
         df = prep.df
 
         prep_file_name = self.datetime_prefix + '_' + prep_file_name
-        prep_file = os.join(prep_file_path, prep_file_name)
+        prep_file = os.path.join(prep_file_path, prep_file_name)
         df.to_csv(prep_file)
 
         end = perf_counter()
