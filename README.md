@@ -45,7 +45,13 @@ This is a good pactice to try to standardize projects.
 
 
 ## Important notes
-- All notebooks in the `notebook` folder was used as draft, just to support the development of this code and should not be considered for evaluation (even if there isn't 'draft' in the name).
+Although a very good model is very important, due to time constraints, I decided to sacrifice a bit of accuracy metrics in order to develop a more robust and complete solution.
+
+The current solution, as it is structured, can be easily adapted to put into production, incorporating into a micro service for example. Your code is clean, simple and easy to maintain.
+
+All the rules cited in this document are flexible and can be changed once the scenario changes, or even after we measure performance in the real world, which will be done constantly.
+
+All notebooks in the `notebook` folder was used as draft, just to support the development of this code and should not be considered for evaluation (even if there isn't 'draft' in the name).
 
 
 ## Next Steps

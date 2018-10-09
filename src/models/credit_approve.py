@@ -8,8 +8,8 @@ from model_fraud_ensemble import FraudEnsemble
 from model_default_ensemble import DefaultEnsemble
 from model_spend_dtr import SpendDTR
 
-def approve_limit(row):
-    """Define approved and limit.
+def pre_approve_limit(row):
+    """Define pre-approved and limit.
 
     Parameters:
         - row: pandas dataframe row
@@ -18,12 +18,43 @@ def approve_limit(row):
         A modified pandas dataframe row with calculated columns
 
     """
-    row['approve'] = '1' if row['fraud'] < 0.1 and row['default'] < 0.1 else '0'
-    limit = '%d' % int(row['spend_score'] * (1 - row['default'])) if row['approve'] == '1' else '%s' % np.nan
-    row['limit'] = limit
+    row['approve'] = '2' if row['fraud'] < 0.015 and row['default'] < 0.3 else '0'    
+    limit = row['spend_score'] * (1 - row['default']) if row['approve'] == '2' else 0.
+    row['limit_float'] = limit
+    return row
+
+def approve(row):
+    """Aprove a customer.
+
+    Parameters:
+        - row: pandas dataframe row
+
+    Return:
+        A modified pandas dataframe row with calculated columns
+
+    """
+    row['approve'] = '1'
+    row['limit'] = '%d' % int(row['limit_float'])
+    return row
+
+def deny(row):
+    """Deny a customer.
+
+    Parameters:
+        - row: pandas dataframe row
+
+    Return:
+        A modified pandas dataframe row with calculated columns
+
+    """
+    row['approve'] = '0'
+    row['limit'] = '%s' % np.nan
     return row
 
 if __name__ == '__main__':
+    # max client aproving
+    max_approved = 1500
+
     # checking for fraud
     fraud_pred = run_model(FraudEnsemble, model_suffix='*_fraud_ensemble.bin')
     fraud_pred.set_index(['ids'], inplace=True)
@@ -45,11 +76,19 @@ if __name__ == '__main__':
     approving = pd.concat([fraud_pred, default_pred, spend_pred], axis=1)
     approving['approve'] = '0'
     approving['limit'] = np.nan
-    approving = approving.apply(approve_limit, axis=1)
+    approving['limit_float'] = 0.0
+    approving = approving.apply(pre_approve_limit, axis=1)
+    
+    # filtering the decision
+    approved = approving.sort_values(by='limit_float', ascending=False)[:max_approved].apply(approve, axis=1)
+    denied = approving.sort_values(by='limit_float', ascending=False)[max_approved:].apply(deny, axis=1)
+    approving = pd.concat([approved, denied], axis=0)
+    
     approving.drop(['fraud'], axis=1, inplace=True)
     approving.drop(['default'], axis=1, inplace=True)
     approving.drop(['spend_score'], axis=1, inplace=True)
-    
+    approving.drop(['limit_float'], axis=1, inplace=True)
+
     # writing a file
     approving.to_csv('deliverable/approve_limit/approve_limit_submission.csv')
     
