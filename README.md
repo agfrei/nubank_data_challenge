@@ -3,6 +3,10 @@ nubank-data-challenge
 
 Nubank data challenge
 
+About the problem
+------------
+You can find details about the problem we are trying to solve on file [here](questions.md) (on file [questions.md](questions.md))
+
 Project Organization
 ------------
 This project is based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>
